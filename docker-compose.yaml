@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  flask_server:
+    container_name: flask_server_container
+    build: ./flask_module/
+    depends_on:
+      - postgres_db
+    volumes:
+      - ./flask_module:/src/app
+    ports:
+      - ${APP_HOST_PORT}:8000
+    restart: always
+    env_file:
+      - .env
+
+  postgres_db:
+    container_name: postgres_db_container
+    image: postgres
+    environment:
+      - POSTGRES_DB=database
+      - POSTGRES_USER = ${POSTGRES_DB_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_DB_PASSWORD}
+    ports:
+      - ${POSTGRES_DB_HOST_PORT}:5432
+    restart: always
