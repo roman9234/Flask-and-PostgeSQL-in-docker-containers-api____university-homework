@@ -1,5 +1,7 @@
+from config import host, port, user, password, db_name
 from flask import Flask, render_template, request
 from flask_restful import Api, Resource
+import psycopg2
 import requests
 import json
 
@@ -7,8 +9,38 @@ import json
 
 app = Flask(__name__)
 
+try:
+    # TODO узнать как работает порт 0000
+    # TODO пофиксить подключение
+    connection = psycopg2.connect(
+        host=host,
+        user="postgres",
+        # user=user,
+        password=password,
+        database=db_name,
+        port=port
+    )
+    connection.autocommit = True
+    cursor = connection.cursor()
+except Exception as e:
+    print(e)
+else:
+    cursor.execute("SELECT version();")
+    print("cursor executed")
+    print(f"cursor result: {cursor.fetchone()}")
 
-# api = Api()
+    cursor.execute("""
+    CREATE TABLE Staff 
+    (
+        id INT,
+        name VARCHAR(255) NOT NULL,
+        position VARCHAR(30),
+        birthday Date
+    );
+    """)
+finally:
+    pass  # TODO добавить что-нибудь, удалять все подключения при завершении работы
+
 
 class Vacancy:
 
@@ -65,7 +97,7 @@ def vacancies():
 
     return render_template("vacancies.html", vacancies=vacancies_list)
 
-
+# TODO разорбрать как работает debug=True
 if __name__ == "__main__":
     app.run(host='0.0.0.0', debug=True)
 

@@ -4,7 +4,8 @@ services:
   flask_server:
     container_name: flask_server_container
     build: ./flask_module/
-    depends_on:
+#    depends_on:
+    links:
       - postgres_db
     volumes:
       - ./flask_module:/src/app
@@ -22,9 +23,10 @@ services:
     environment:
       - POSTGRES_DB=database
 #      - POSTGRES_USER = ${POSTGRES_DB_USER}
-      - POSTGRES_USER = root
+      - POSTGRES_USER=root
 #      - POSTGRES_PASSWORD = ${POSTGRES_DB_PASSWORD}
-      - POSTGRES_PASSWORD= root
+      - POSTGRES_PASSWORD=root
+    network_mode: 'host'
     ports:
 #      - ${POSTGRES_DB_HOST_PORT}:5432
       - "5432:5432"
