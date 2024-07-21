@@ -21,6 +21,11 @@ class Vacancy:
 
 
 @app.route('/')
+def server_response():
+    return "hello flask server"
+
+
+@app.route('/vacs')
 def vacancies():
     vacancies_list = []
     res = requests.get("https://api.hh.ru/vacancies")
@@ -37,7 +42,7 @@ def vacancies():
             print(x['salary']['currency'])
             print(x['address']['raw'])
 
-            v = Vacancy(x['name'], x['salary']['from'], x['salary']['to'], x['salary']['currency'],x['address']['raw'])
+            v = Vacancy(x['name'], x['salary']['from'], x['salary']['to'], x['salary']['currency'], x['address']['raw'])
             vacancies_list.append(v)
         except Exception as e:
             print(e)
@@ -62,7 +67,7 @@ def vacancies():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
 
 # TODO удалить комментарии
 # python3 app.py
