@@ -1,6 +1,6 @@
 from config import host, port, user, password, db_name
 from flask import Flask, render_template, request
-from flask_restful import Api, Resource
+# from flask_restful import Api, Resource
 import psycopg2
 import requests
 import json
@@ -13,7 +13,8 @@ try:
     # TODO узнать как работает порт 0000
     # TODO пофиксить подключение
     connection = psycopg2.connect(
-        host=host,
+        # host=host,
+        host="postgres_db",
         user="postgres",
         # user=user,
         password=password,
@@ -67,17 +68,17 @@ def vacancies():
 
     for x in q['items']:
         try:
-            print(x['name'])
-            print(x['area']['name'])
-            print(x['salary']['from'])
-            print(x['salary']['to'])
-            print(x['salary']['currency'])
-            print(x['address']['raw'])
+            # print(x['name'])
+            # print(x['area']['name'])
+            # print(x['salary']['from'])
+            # print(x['salary']['to'])
+            # print(x['salary']['currency'])
+            # print(x['address']['raw'])
 
             v = Vacancy(x['name'], x['salary']['from'], x['salary']['to'], x['salary']['currency'], x['address']['raw'])
             vacancies_list.append(v)
-        except Exception as e:
-            print(e)
+        except Exception as exception:
+            print(exception)
 
     # параметры сортировки
     sort_column = request.args.get('sort_column')
@@ -96,6 +97,7 @@ def vacancies():
         vacancies_list = [vacancy for vacancy in vacancies_list if vacancy.city == filter_city]
 
     return render_template("vacancies.html", vacancies=vacancies_list)
+
 
 # TODO разорбрать как работает debug=True
 if __name__ == "__main__":
