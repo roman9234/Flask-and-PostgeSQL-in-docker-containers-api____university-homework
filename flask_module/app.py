@@ -7,8 +7,6 @@ import requests
 import json
 
 
-# TODO: сделать нормальное окружение
-
 app = Flask(__name__)
 
 try:
@@ -32,7 +30,8 @@ else:
     print(f"cursor result: {cursor.fetchone()}")
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS public.vacancies
+    DROP TABLE IF EXISTS public.vacancies;
+    CREATE TABLE public.vacancies
     (
         id serial,
         vac_name character varying(256),
@@ -45,7 +44,7 @@ else:
     );
     """)
 
-    for page in range(1,21):
+    for page in range(1,11):
         # vacancies_list = []
         # TODO понять почему per_page не работает как надо - вместо 10 выводится 20
         res = requests.get(f"https://api.hh.ru/vacancies?page={page}&per_page=10")
@@ -74,16 +73,17 @@ else:
                     salary_from = "NULL"
                     salary_to = "NULL"
                     currency = "NULL"
-                if x['address'] is not None:
-                    if x['address']['raw'] is not None:
-                        address_raw = f"\'{x['address']['raw']}\'"
+                if x['area'] is not None:
+                    if x['area']['name'] is not None:
+                        city = f"\'{x['area']['name']}\'"
                     else:
-                        address_raw = "NULL"
+                        city = "NULL"
                 else:
-                    address_raw = "NULL"
+                    city = "NULL"
+
 
                 query = "INSERT INTO public.vacancies (vac_name, salary_min, salary_max, currency, city) VALUES ({}, {}, {}, {}, {});" \
-                    .format(name, salary_from, salary_to, currency, address_raw)
+                    .format(name, salary_from, salary_to, currency, city)
                 cursor.execute(query)
             except Exception as exception:
                 print(exception)
@@ -96,7 +96,11 @@ def server_response():
 
 @app.route('/vacs')
 def vacancies():
+
     vacancies_list = []
+
+    cursor.execute("SELECT DISTINCT v.city FROM public.vacancies v")
+    distinct_cities = cursor.fetchall()
 
     cursor.execute("SELECT \
         v.vac_name, \
@@ -127,7 +131,7 @@ def vacancies():
 
 
 
-    return render_template("vacancies.html", vacancies=vacancies_list)
+    return render_template("vacancies.html", vacancies=vacancies_list, cities=distinct_cities)
 
 
 # TODO разорбрать как работает debug=True
