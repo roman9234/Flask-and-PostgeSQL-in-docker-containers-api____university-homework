@@ -98,20 +98,47 @@ def server_response():
 def vacancies():
 
     vacancies_list = []
+    distinct_cities = []
     # TODO удалить, сделать сканирование данных которые есть в Vacancies
 
     cursor.execute("SELECT DISTINCT v.city FROM public.vacancies v")
-    distinct_cities = cursor.fetchall()
+    results = cursor.fetchall()
+    print(results)
+    for x in results:
+        distinct_cities.append(x[0])
 
-    cursor.execute("SELECT \
+
+    filter_params = " WHERE "
+    filter_active = False
+    cancel_filter = False
+
+    filter_city = request.args.get('filter_city')
+    if request.args.get('reset_filter') is not None:  # TODO сделать систему сброса фильтра получше
+        cancel_filter = True
+
+    if filter_city is not None:
+        if filter_active:
+            filter_params+= ", "
+        else:
+            filter_active = True
+            filter_params += f"v.city = '{filter_city}'"
+
+    query = "SELECT \
         v.vac_name, \
         v.salary_min,\
         v.salary_max,\
         v.currency,\
         v.city \
-        FROM public.vacancies v")
+        FROM public.vacancies v"
 
-    # Получаем результат сделанного запроса
+
+
+    if filter_active and not cancel_filter:
+        query += filter_params
+
+    print(query)
+    cursor.execute(query)
+
     results = cursor.fetchall()
 
     for element in results:
@@ -125,8 +152,8 @@ def vacancies():
 
     # параметры сортировки
     # sort_column = request.args.get('sort_column')
+    # print(sort_column)
     # sort_direction = request.args.get('sort_direction')
-    # filter_city = request.args.get('filter_city')
 
     # TODO ввести сортировку и фильтрацию
 
