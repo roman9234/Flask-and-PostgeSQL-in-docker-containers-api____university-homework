@@ -1,5 +1,6 @@
 from config import host, port, user, password, db_name
 from flask import Flask, render_template, request
+from Vacancy import Vacancy
 # from flask_restful import Api, Resource
 import psycopg2
 import requests
@@ -97,21 +98,34 @@ def server_response():
 def vacancies():
     vacancies_list = []
 
+    cursor.execute("SELECT \
+        v.vac_name, \
+        v.salary_min,\
+        v.salary_max,\
+        v.currency,\
+        v.city \
+        FROM public.vacancies v")
+
+    # Получаем результат сделанного запроса
+    results = cursor.fetchall()
+
+    for element in results:
+        v_name = element[0] if element[0] is not None else "-"
+        smin = element[1] if element[1] is not None else "-"
+        smax = element[2] if element[2] is not None else "-"
+        curr = element[3] if element[3] is not None else "-"
+        city = element[4] if element[4] is not None else "-"
+        v = Vacancy(name=v_name, salary_min=smin, salary_max=smax, currency=curr, city=city)
+        vacancies_list.append(v)
+
     # параметры сортировки
-    sort_column = request.args.get('sort_column')
-    sort_direction = request.args.get('sort_direction')
-    filter_city = request.args.get('filter_city')
+    # sort_column = request.args.get('sort_column')
+    # sort_direction = request.args.get('sort_direction')
+    # filter_city = request.args.get('filter_city')
 
-    # Сортировка
-    if sort_column:
-        if sort_direction == "desc":
-            vacancies_list.sort(key=lambda x: getattr(x, sort_column), reverse=True)
-        else:
-            vacancies_list.sort(key=lambda x: getattr(x, sort_column))
+    # TODO ввести сортировку и фильтрацию
 
-    # Фильтрация
-    if filter_city:
-        vacancies_list = [vacancy for vacancy in vacancies_list if vacancy.city == filter_city]
+
 
     return render_template("vacancies.html", vacancies=vacancies_list)
 
