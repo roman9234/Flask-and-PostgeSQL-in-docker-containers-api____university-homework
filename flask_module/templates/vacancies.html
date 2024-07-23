@@ -25,24 +25,25 @@
 
     <h1>Вакансии</h1>
 
-    <form method="get" action="/">
+    <form method="get" action="/vacs">
         <label for="filter_city">Город:</label>
         <select id="filter_city" name="filter_city">
-            <option value="">Все города</option>
-            <option value="Москва">Москва</option>
-            <option value="Санкт-Петербург">Санкт-Петербург</option>
+            {% for city in cities %}
+            <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
         </select>
         <button type="submit">Фильтровать</button>
+        <button type="submit" name="reset_filter">Сбросить фильтр</button>  <!-- Кнопка сброса -->
     </form>
 
-    <table>
+    <table class="sortable">
         <thead>
             <tr>
-                <th><a href="/?sort_column=name&sort_direction=desc">Название</a></th>
-                <th><a href="/?sort_column=salary_min&sort_direction=desc">Зарплата (мин)</a></th>
-                <th><a href="/?sort_column=salary_max&sort_direction=desc">Зарплата (макс)</a></th>
-                <th><a href="/?sort_column=currency&sort_direction=desc">Валюта</a></th>
-                <th><a href="/?sort_column=city&sort_direction=desc">Город</a></th>
+                <th><a>Название</a></th>
+                <th><a>Зарплата (мин)</a></th>
+                <th><a>Зарплата (макс)</a></th>
+                <th><a>Валюта</a></th>
+                <th><a>Город</a></th>
             </tr>
         </thead>
         <tbody>
