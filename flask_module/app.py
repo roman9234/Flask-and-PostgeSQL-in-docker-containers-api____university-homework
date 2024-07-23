@@ -1,12 +1,11 @@
 from config import host, port, user, password, db_name
 from flask import Flask, render_template, request
+from Vacancy import Vacancy
 # from flask_restful import Api, Resource
 import psycopg2
 import requests
 import json
 
-
-# TODO: сделать нормальное окружение
 
 app = Flask(__name__)
 
@@ -31,7 +30,8 @@ else:
     print(f"cursor result: {cursor.fetchone()}")
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS public.vacancies
+    DROP TABLE IF EXISTS public.vacancies;
+    CREATE TABLE public.vacancies
     (
         id serial,
         vac_name character varying(256),
@@ -44,7 +44,7 @@ else:
     );
     """)
 
-    for page in range(1,21):
+    for page in range(1,11):
         # vacancies_list = []
         # TODO понять почему per_page не работает как надо - вместо 10 выводится 20
         res = requests.get(f"https://api.hh.ru/vacancies?page={page}&per_page=10")
@@ -73,16 +73,17 @@ else:
                     salary_from = "NULL"
                     salary_to = "NULL"
                     currency = "NULL"
-                if x['address'] is not None:
-                    if x['address']['raw'] is not None:
-                        address_raw = f"\'{x['address']['raw']}\'"
+                if x['area'] is not None:
+                    if x['area']['name'] is not None:
+                        city = f"\'{x['area']['name']}\'"
                     else:
-                        address_raw = "NULL"
+                        city = "NULL"
                 else:
-                    address_raw = "NULL"
+                    city = "NULL"
+
 
                 query = "INSERT INTO public.vacancies (vac_name, salary_min, salary_max, currency, city) VALUES ({}, {}, {}, {}, {});" \
-                    .format(name, salary_from, salary_to, currency, address_raw)
+                    .format(name, salary_from, salary_to, currency, city)
                 cursor.execute(query)
             except Exception as exception:
                 print(exception)
@@ -95,28 +96,43 @@ def server_response():
 
 @app.route('/vacs')
 def vacancies():
+
     vacancies_list = []
-    cities_list=[]
     # TODO удалить, сделать сканирование данных которые есть в Vacancies
-    cities_list += ["Москва","Санкт-Петербург","Ростов"]
+
+    cursor.execute("SELECT DISTINCT v.city FROM public.vacancies v")
+    distinct_cities = cursor.fetchall()
+
+    cursor.execute("SELECT \
+        v.vac_name, \
+        v.salary_min,\
+        v.salary_max,\
+        v.currency,\
+        v.city \
+        FROM public.vacancies v")
+
+    # Получаем результат сделанного запроса
+    results = cursor.fetchall()
+
+    for element in results:
+        v_name = element[0] if element[0] is not None else "-"
+        smin = element[1] if element[1] is not None else "-"
+        smax = element[2] if element[2] is not None else "-"
+        curr = element[3] if element[3] is not None else "-"
+        city = element[4] if element[4] is not None else "-"
+        v = Vacancy(name=v_name, salary_min=smin, salary_max=smax, currency=curr, city=city)
+        vacancies_list.append(v)
 
     # параметры сортировки
-    sort_column = request.args.get('sort_column')
-    sort_direction = request.args.get('sort_direction')
-    filter_city = request.args.get('filter_city')
+    # sort_column = request.args.get('sort_column')
+    # sort_direction = request.args.get('sort_direction')
+    # filter_city = request.args.get('filter_city')
 
-    # Сортировка
-    if sort_column:
-        if sort_direction == "desc":
-            vacancies_list.sort(key=lambda x: getattr(x, sort_column), reverse=True)
-        else:
-            vacancies_list.sort(key=lambda x: getattr(x, sort_column))
+    # TODO ввести сортировку и фильтрацию
 
-    # Фильтрация
-    if filter_city:
-        vacancies_list = [vacancy for vacancy in vacancies_list if vacancy.city == filter_city]
 
-    return render_template("vacancies.html", vacancies=vacancies_list, cities=cities_list)
+
+    return render_template("vacancies.html", vacancies=vacancies_list, cities=distinct_cities)
 
 
 # TODO разорбрать как работает debug=True
