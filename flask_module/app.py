@@ -5,13 +5,13 @@ import psycopg2
 import requests
 import json
 
+
 # TODO: сделать нормальное окружение
 
 app = Flask(__name__)
 
 try:
     # TODO узнать как работает порт 0000
-    # TODO пофиксить подключение
     connection = psycopg2.connect(
         # host=host,
         host="db",
@@ -31,26 +31,61 @@ else:
     print(f"cursor result: {cursor.fetchone()}")
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Staff 
+    CREATE TABLE IF NOT EXISTS public.vacancies
     (
-        id INT,
-        name VARCHAR(255) NOT NULL,
-        position VARCHAR(30),
-        birthday Date
+        id serial,
+        vac_name character varying(256),
+        salary_min integer,
+        salary_max integer,
+        currency character varying(3),
+        city character varying(256),
+        metro_station character varying(256),
+        PRIMARY KEY (id)
     );
     """)
-finally:
-    pass  # TODO добавить что-нибудь, удалять все подключения при завершении работы
 
+    for page in range(1,21):
+        # vacancies_list = []
+        # TODO понять почему per_page не работает как надо - вместо 10 выводится 20
+        res = requests.get(f"https://api.hh.ru/vacancies?page={page}&per_page=10")
+        q = json.loads(res.text)
+        for x in q['items']:
+            try:
+                if x['name'] is not None:
+                    name = f"\'{x['name']}\'"
+                else:
+                    name = "NULL"
 
-class Vacancy:
+                if x['salary'] is not None:
+                    if x['salary']['from'] is not None:
+                        salary_from = f"\'{x['salary']['from']}\'"
+                    else:
+                        salary_from = "NULL"
+                    if x['salary']['to'] is not None:
+                        salary_to = f"\'{x['salary']['to']}\'"
+                    else:
+                        salary_to = "NULL"
+                    if x['salary']['currency'] is not None:
+                        currency = f"\'{x['salary']['currency']}\'"
+                    else:
+                        currency = "NULL"
+                else:
+                    salary_from = "NULL"
+                    salary_to = "NULL"
+                    currency = "NULL"
+                if x['address'] is not None:
+                    if x['address']['raw'] is not None:
+                        address_raw = f"\'{x['address']['raw']}\'"
+                    else:
+                        address_raw = "NULL"
+                else:
+                    address_raw = "NULL"
 
-    def __init__(self, name, salary_min, salary_max, currency, city):
-        self.name = name
-        self.salary_min = salary_min
-        self.salary_max = salary_max
-        self.currency = currency
-        self.city = city
+                query = "INSERT INTO public.vacancies (vac_name, salary_min, salary_max, currency, city) VALUES ({}, {}, {}, {}, {});" \
+                    .format(name, salary_from, salary_to, currency, address_raw)
+                cursor.execute(query)
+            except Exception as exception:
+                print(exception)
 
 
 @app.route('/')
@@ -61,24 +96,6 @@ def server_response():
 @app.route('/vacs')
 def vacancies():
     vacancies_list = []
-    res = requests.get("https://api.hh.ru/vacancies")
-    q = json.loads(res.text)
-
-    # print(q['items'][0])
-
-    for x in q['items']:
-        try:
-            # print(x['name'])
-            # print(x['area']['name'])
-            # print(x['salary']['from'])
-            # print(x['salary']['to'])
-            # print(x['salary']['currency'])
-            # print(x['address']['raw'])
-
-            v = Vacancy(x['name'], x['salary']['from'], x['salary']['to'], x['salary']['currency'], x['address']['raw'])
-            vacancies_list.append(v)
-        except Exception as exception:
-            print(exception)
 
     # параметры сортировки
     sort_column = request.args.get('sort_column')
