@@ -96,6 +96,9 @@ def server_response():
 @app.route('/vacs')
 def vacancies():
     vacancies_list = []
+    cities_list=[]
+    # TODO удалить, сделать сканирование данных которые есть в Vacancies
+    cities_list += ["Москва","Санкт-Петербург","Ростов"]
 
     # параметры сортировки
     sort_column = request.args.get('sort_column')
@@ -113,7 +116,7 @@ def vacancies():
     if filter_city:
         vacancies_list = [vacancy for vacancy in vacancies_list if vacancy.city == filter_city]
 
-    return render_template("vacancies.html", vacancies=vacancies_list)
+    return render_template("vacancies.html", vacancies=vacancies_list, cities=cities_list)
 
 
 # TODO разорбрать как работает debug=True
