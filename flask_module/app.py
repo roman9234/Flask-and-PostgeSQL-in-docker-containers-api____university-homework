@@ -14,7 +14,7 @@ try:
     # TODO пофиксить подключение
     connection = psycopg2.connect(
         # host=host,
-        host="postgres_db",
+        host="db",
         user="postgres",
         # user=user,
         password=password,
@@ -31,7 +31,7 @@ else:
     print(f"cursor result: {cursor.fetchone()}")
 
     cursor.execute("""
-    CREATE TABLE Staff 
+    CREATE TABLE IF NOT EXISTS Staff 
     (
         id INT,
         name VARCHAR(255) NOT NULL,
